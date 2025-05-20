@@ -1,0 +1,5 @@
+/* src/assets/main.css */
+/* Tailwind 的三個核心指令 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
