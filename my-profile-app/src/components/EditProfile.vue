@@ -217,10 +217,26 @@ const handleFileChange = (event, index) => {
 
 
 // 刪除圖片
-const removePhoto = (index) => {
-  photoList.value[index].file = null
-  photoList.value[index].preview = ''
+const removePhoto = async (index) => {
+  const imageKey = photoList.value[index].key
+
+  if (!imageKey) {
+    photoList.value[index].file = null
+    photoList.value[index].preview = ''
+    return
+  }
+
+  try {
+    await axios.delete(`http://localhost:3000/api/photos/${imageKey}`)
+    photoList.value[index].file = null
+    photoList.value[index].preview = ''
+    photoList.value[index].key = ''
+    console.log('✅ 圖片刪除成功')
+  } catch (err) {
+    console.error('❌ 圖片刪除失敗', err)
+  }
 }
+
 
 // 點完成 → 一次上傳所有圖片
 const uploadAll = async () => {
@@ -229,10 +245,10 @@ const uploadAll = async () => {
   photoList.value.forEach((item, index) => {
     if (item.file) {
       const formData = new FormData()
-      formData.append('avatar', item.file)
+      formData.append('image', item.file)
 
-      const promise = axios.post('http://localhost:3000/upload-avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const promise = axios.post('http://localhost:3000/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       }).then(res => {
         console.log(`第 ${index + 1} 張上傳成功`, res.data)
       }).catch(err => {
@@ -246,5 +262,24 @@ const uploadAll = async () => {
   await Promise.all(uploadPromises)
   alert('✅ 所有已選圖片都已上傳完成')
 }
+
+import { onMounted } from 'vue'
+
+onMounted(async () => {
+  try {
+    const res = await axios.get('http://localhost:3000/api/photos')
+    const images = res.data
+
+    // 把抓到的圖片塞進 photoList 預覽
+    images.forEach((item, index) => {
+      if (index < photoList.value.length) {
+        photoList.value[index].preview = item.image_url
+        photoList.value[index].key = item.image_key
+      }
+    })
+  } catch (err) {
+    console.error('圖片載入失敗', err)
+  }
+})
 
 </script>
